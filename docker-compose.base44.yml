@@ -1,0 +1,96 @@
+# Base44 sandbox / development stack for ClipBucket.
+#
+#   web      Apache + mod_php 7.4 serving upload/ from the cloned source on :3000
+#   install  one-shot installer (schema + seed + language phrases), runs once
+#   db       MySQL 5.7 (the app predates MySQL 8 strict mode / zero dates)
+#
+#   docker compose -f docker-compose.base44.yml up -d --build
+name: clipbucket
+
+services:
+  db:
+    image: mysql:5.7
+    restart: on-failure
+    command:
+      - --sql-mode=NO_ENGINE_SUBSTITUTION
+      - --character-set-server=utf8
+      - --collation-server=utf8_general_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: clipbucket_root
+      MYSQL_DATABASE: clipbucket
+      MYSQL_USER: clipbucket
+      MYSQL_PASSWORD: clipbucket_pass
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  install:
+    image: clipbucket-app:dev
+    build:
+      context: .
+      dockerfile: docker/php-apache.Dockerfile
+    command: ["php", "/usr/local/bin/cb-install"]
+    restart: "no"
+    environment:
+      DB_HOST: db
+      DB_NAME: clipbucket
+      DB_USER: clipbucket
+      DB_PASS: clipbucket_pass
+      DB_PREFIX: cb_
+      CB_BASEDIR: /var/www/html
+      CB_BASE_URL: http://localhost:3000
+    volumes:
+      - ./upload:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: clipbucket-app:dev
+    build:
+      context: .
+      dockerfile: docker/php-apache.Dockerfile
+    restart: on-failure
+    ports:
+      - "3000:80"
+    environment:
+      APACHE_RUN_USER: www-data
+      APACHE_RUN_GROUP: www-data
+      # Platform provided; a bare mapping passes the value through when set.
+      BASE44_PREVIEW_MODE:
+      BASE44_PUBLIC_HOST_SUFFIX:
+    volumes:
+      - ./upload:/var/www/html
+    # ClipBucket needs several directories writable by the web server. The
+    # capital X keeps the repository file modes intact (no stray exec bits).
+    command:
+      - sh
+      - -ec
+      - >
+        chmod -R a+rwX /var/www/html/files /var/www/html/images
+        /var/www/html/styles /var/www/html/cache /var/www/html/player
+        /var/www/html/includes/email_templates 2>/dev/null;
+        exec apache2-foreground
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - php -r 'exit((int)!@file_get_contents("http://127.0.0.1/index.php"));'
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    labels:
+      base44.project: ClipBucket
+      base44.kind: web
+      base44.port: "3000"
+
+volumes:
+  db-data:

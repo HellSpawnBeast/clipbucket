@@ -141,7 +141,15 @@
 	die('Basedir is incorrect, please set the correct basedir value in \'config\' table');
 	$baseurl = $row['baseurl'];
 
-	if (is_ssl()) {
+	// Base44 sandbox only (BASE44_PREVIEW_MODE=1): the preview origin is assigned
+	// when the sandbox starts, so build it from the platform environment instead
+	// of the host value stored in the config table. When the flag is unset the
+	// value from the database is used exactly as before.
+	$base44_preview_host = getenv('BASE44_PREVIEW_MODE') === '1' ? getenv('BASE44_PUBLIC_HOST_SUFFIX') : false;
+	if ($base44_preview_host) {
+	    define('CB_SSL', true);
+	    $baseurl = 'https://3000-' . $base44_preview_host;
+	} elseif (is_ssl()) {
 	    define('CB_SSL', true);
 	    $baseurl = str_replace('http://', 'https://', $baseurl);
 	} else {
