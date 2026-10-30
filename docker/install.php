@@ -180,6 +180,10 @@ foreach (array(
     'type'           => 'RC1',
     'date_installed' => $now,
     'date_updated'   => $now,
+    // No mail transport in the sandbox, so new accounts would never be able
+    // to confirm their address and signup would dead-end. Re-enable in the
+    // admin area once SMTP is configured.
+    'email_verification' => '0',
 ) as $name => $value) {
     $escapedName = $db->real_escape_string($name);
     $escapedValue = $db->real_escape_string($value);

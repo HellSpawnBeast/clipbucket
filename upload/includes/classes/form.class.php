@@ -424,7 +424,7 @@ class formObj
 		if($field['value'][0]=='category')
 		{
 			$values_array = $field['value'][1][0];
-			$field['value'] = '';
+			$field['value'] = array();
 			//Generate Category list
 			$type = $field['type'] ? $field['type'] : 'video';
 			$catArray = getCategoryList(array("type"=>$field['category_type'],"with_all"=>true));

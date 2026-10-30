@@ -42,6 +42,10 @@ host :3000). `web` waits for `install` to exit successfully.
   start (`a+rwX`, so repository file modes are preserved).
 - Video conversion binaries (ffmpeg, flvtool2, MP4Box) are **not** installed:
   the site browses/renders fine, but uploaded videos are never converted.
+- **Signup needs `email_verification = 0`.** There is no mail transport in the
+  sandbox, so with verification on every new account would sit at "check your
+  email" forever. `docker/install.php` seeds it off; turn it back on in
+  `admin_area` once SMTP is configured.
 
 ## Admin
 
