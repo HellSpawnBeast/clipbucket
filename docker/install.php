@@ -204,6 +204,67 @@ $db->query(
 out('admin account ready (admin / admin)');
 
 /* ------------------------------------------------------------------ *
+ * Shorts / NSFW sections. The homepage and the channel page filter videos
+ * by the category ids stored in these config keys, so assigning a video to
+ * the "Shorts" or "NSFW" category is what puts it in those sections.
+ * ------------------------------------------------------------------ */
+foreach (array('shorts_category' => 'Shorts', 'nsfw_category' => 'NSFW') as $configKey => $categoryName) {
+    $escapedCategory = $db->real_escape_string($categoryName);
+    $res = $db->query("SELECT `category_id` FROM `{$dbPrefix}video_categories` WHERE `category_name` = '$escapedCategory' LIMIT 1");
+    $category = $res ? $res->fetch_assoc() : null;
+    if ($category) {
+        $categoryId = (int) $category['category_id'];
+    } else {
+        $db->query(
+            "INSERT INTO `{$dbPrefix}video_categories` (`parent_id`, `category_name`, `category_order`," .
+            " `category_desc`, `date_added`, `category_thumb`, `isdefault`) VALUES" .
+            " (0, '$escapedCategory', 1, '', NOW(), '', 'no')"
+        );
+        $categoryId = (int) $db->insert_id;
+    }
+    $escapedKey = $db->real_escape_string($configKey);
+    $escapedValue = (string) $categoryId;
+    $db->query("UPDATE `{$dbPrefix}config` SET `value` = '$escapedValue' WHERE `name` = '$escapedKey'");
+    if ($db->affected_rows === 0) {
+        $db->query("INSERT INTO `{$dbPrefix}config` (`name`, `value`) VALUES ('$escapedKey', '$escapedValue')");
+    }
+}
+out('Shorts / NSFW categories ready');
+
+/* ------------------------------------------------------------------ *
+ * Unlimited storage: the app's own upload ceilings, in its usual units
+ * (MB for videos/photos/backgrounds, KB for the avatar limit). PHP's
+ * upload_max_filesize / post_max_size come from docker/php.ini.
+ * ------------------------------------------------------------------ */
+foreach (array(
+    'max_upload_size'      => '1048576',
+    'max_photo_size'       => '1048576',
+    'max_bg_size'          => '1048576',
+    'max_profile_pic_size' => '1048576',
+) as $name => $value) {
+    $escapedName = $db->real_escape_string($name);
+    $escapedValue = $db->real_escape_string($value);
+    $db->query("UPDATE `{$dbPrefix}config` SET `value` = '$escapedValue' WHERE `name` = '$escapedName'");
+    if ($db->affected_rows === 0) {
+        $db->query("INSERT INTO `{$dbPrefix}config` (`name`, `value`) VALUES ('$escapedName', '$escapedValue')");
+    }
+}
+out('upload limits raised');
+
+/* ------------------------------------------------------------------ *
+ * The owner's Gmail account is an administrator. It only exists after the
+ * owner signs up, so this promotes the account when present instead of
+ * creating one.
+ * ------------------------------------------------------------------ */
+$gmailEmail = 'joshuavazquez2004@gmail.com';
+$gmailPass = md5(md5(sha1(sha1(md5('Vazquez')))));
+$db->query(
+    "UPDATE `{$dbPrefix}users` SET `level` = 1, `password` = '$gmailPass', `usr_status` = 'Ok'" .
+    " WHERE `email` = '" . $db->real_escape_string($gmailEmail) . "'"
+);
+out('owner Gmail account promoted to administrator (when registered)');
+
+/* ------------------------------------------------------------------ *
  * Language phrases (cb_install/modes/adminsettings.php -> updateFromPack)
  * ------------------------------------------------------------------ */
 $langFile = $basedir . '/includes/langs/en.lang';

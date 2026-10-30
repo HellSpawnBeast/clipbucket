@@ -68,6 +68,48 @@
 					<button id="recent_load_more" class="btn btn-loadmore" loadtype="video" loadmode="recent" loadlimit="{$row.index_recent}" loadhit="1" title="Load more recent video">{lang code="load_more"}</button>
 				</div>
 			</section>
+
+			{$shorts_cat = $Cbucket->configs.shorts_category}
+			<section class="clearfix videos shorts-videos">
+				<h1>Shorts</h1>
+				<div class="clearfix row">
+				{if $shorts_cat}
+					{$shorts_videos = get_videos(['category'=>$shorts_cat, 'order'=>'date_added DESC', 'limit'=>8])}
+					{if $shorts_videos}
+						{foreach $shorts_videos as $video}
+						<div class="item-video col-lg-4 col-md-4 col-sm-6 col-xs-12">
+							{include file="$style_dir/blocks/videos/video.html" display_type='homeVideos'}
+						</div>
+						{/foreach}
+					{else}
+						<div class="well well-info">{lang code='no_results_found'}</div>
+					{/if}
+				{else}
+					<div class="well well-info">{lang code='no_results_found'}</div>
+				{/if}
+				</div>
+			</section>
+
+			{$nsfw_cat = $Cbucket->configs.nsfw_category}
+			<section class="clearfix videos nsfw-videos">
+				<h1>NSFW</h1>
+				<div class="clearfix row">
+				{if $nsfw_cat}
+					{$nsfw_videos = get_videos(['category'=>$nsfw_cat, 'order'=>'date_added DESC', 'limit'=>8])}
+					{if $nsfw_videos}
+						{foreach $nsfw_videos as $video}
+						<div class="item-video col-lg-4 col-md-4 col-sm-6 col-xs-12">
+							{include file="$style_dir/blocks/videos/video.html" display_type='homeVideos'}
+						</div>
+						{/foreach}
+					{else}
+						<div class="well well-info">{lang code='no_results_found'}</div>
+					{/if}
+				{else}
+					<div class="well well-info">{lang code='no_results_found'}</div>
+				{/if}
+				</div>
+			</section>
 		</div>
 		<aside id="sidebar">
 			<div class="box-ad ad">{AD place='ad_300x250'}</div>

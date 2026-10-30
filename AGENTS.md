@@ -47,9 +47,29 @@ host :3000). `web` waits for `install` to exit successfully.
   email" forever. `docker/install.php` seeds it off; turn it back on in
   `admin_area` once SMTP is configured.
 
+## Sections (Shorts / NSFW)
+
+The homepage renders **Shorts** and **NSFW** sections below Recent Videos, and
+every channel page has matching tabs next to Playlists. `docker/install.php`
+creates the `Shorts` / `NSFW` rows in `cb_video_categories` and stores their ids
+in the `shorts_category` / `nsfw_category` config keys; the templates filter
+`get_videos()` with those categories, so a video shows up in a section once it
+is assigned to the matching category (upload form or video edit).
+
+## Storage
+
+Upload ceilings are effectively unlimited: `max_upload_size`, `max_photo_size`
+and `max_bg_size` (MB) plus `max_profile_pic_size` (KB) are set to `1048576` by
+the installer, and `docker/php.ini` raises PHP's `upload_max_filesize` /
+`post_max_size` to 20G / 22G. Changing `docker/php.ini` needs an image rebuild.
+
 ## Admin
 
 `/admin_area/login.php` — `admin` / `admin` (seeded by the installer).
+The owner's Gmail account (`joshuavazquez2004@gmail.com`, username `AshCoyote`)
+is promoted to Administrator with password `Vazquez` by `docker/install.php`
+whenever that account exists; on this workspace it was promoted directly in the
+database. The Gmail address is not a login name — sign in with the username.
 
 ## Verify
 
